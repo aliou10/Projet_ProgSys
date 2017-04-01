@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
     pid_t pid_fils[nombreDeProcessus];
     int desc1, desc2;
     int desc3, desc4;
-    int messageAller = 1;
+    char messageAller[100] = "processus1";
     int messageRetour = 8;
     int numeroProc = 0;
 
@@ -88,42 +88,47 @@ int main(int argc, char **argv) {
         if (numeroProc == 1) {
             desc2 = open(forwardPipe[0], O_WRONLY);
             desc1 = open(forwardPipe[nombreDeProcessus - 1], O_RDONLY);
-            write(desc2, &messageAller, sizeof(int));
-            printf("Serveur %d : valeur envoyée %d.\n", getpid(), messageAller);
-            read(desc1, &messageAller, sizeof(int));
+            write(desc2, messageAller, sizeof(messageAller));
+            printf("Processu[%d] : valeur envoyée %s.\n", getpid(), messageAller);
+            read(desc1, messageAller, sizeof(messageAller));
             sleep(3);
-            printf("Serveur %d : valeur lue %d.\n", getpid(), messageAller);
+            printf("Processus[%d] : valeur lue %s.\n", getpid(), messageAller);
             close(desc2);
             close(desc1);
 
+            sleep((unsigned int) numeroProc);
             desc4 = open(backwardPipe[0], O_WRONLY);
             desc3 = open(backwardPipe[nombreDeProcessus - 1], O_RDONLY);
-            write(desc4, &messageRetour, sizeof(int));
-            printf("Serveur %d : valeur envoyée %d.\n", getpid(), messageRetour);
-            read(desc3, &messageRetour, sizeof(int));
-            printf("Serveur %d : valeur lue %d.\n", getpid(), messageRetour);
+            write(desc4, messageAller, sizeof(messageAller));
+            printf("Processus[%d] : valeur envoyée %s.\n", getpid(), messageAller);
+            read(desc3, messageAller, sizeof(messageAller));
+            printf("Processus[%d] : valeur lue %s.\n", getpid(), messageAller);
             close(desc4);
             close(desc3);
             fflush(stdout);
         } else {
             desc1 = open(forwardPipe[numeroProc - 2], O_RDONLY);
             desc2 = open(forwardPipe[numeroProc - 1], O_WRONLY);
-            read(desc1, &messageAller, sizeof(int));
-            printf("Client %d : valeur lue %d.\n", getpid(), messageAller);
-            messageAller *= 2;
-            write(desc2, &messageAller, sizeof(int));
-            printf("Client %d : valeur envoyée %d.\n", getpid(), messageAller);
+            read(desc1, messageAller, sizeof(messageAller));
+            printf("Processus[%d] : valeur lue %s.\n", getpid(), messageAller);
+            char str[10];
+            strcat(messageAller, "processus");
+            sprintf(str, "%d", numeroProc);
+            strcat(messageAller, str);
+            write(desc2, messageAller, sizeof(messageAller));
+            printf("Processus[%d] : valeur envoyée %s.\n", getpid(), messageAller);
             close(desc1);
             close(desc2);
 
             sleep((unsigned int) numeroProc);
             desc3 = open(backwardPipe[nombreDeProcessus - numeroProc], O_RDONLY);
             desc4 = open(backwardPipe[nombreDeProcessus - numeroProc + 1], O_WRONLY);
-            read(desc3, &messageRetour, sizeof(int));
-            printf("Client %d : valeur lue %d.\n", getpid(), messageRetour);
+            read(desc3, messageAller, sizeof(messageAller));
+            printf("Processus[%d] : valeur lue %s.\n", getpid(), messageAller);
+
             messageRetour *= 3;
-            write(desc4, &messageRetour, sizeof(int));
-            printf("Client %d : valeur envoyée %d.\n", getpid(), messageRetour);
+            write(desc4, messageAller, sizeof(messageAller));
+            printf("Processus[%d] : valeur envoyée %s.\n", getpid(), messageAller);
             close(desc3);
             close(desc4);
         }
