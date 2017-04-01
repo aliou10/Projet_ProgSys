@@ -24,7 +24,6 @@ int main(int argc, char **argv) {
     int desc1, desc2;
     int desc3, desc4;
     char messageAller[100] = "processus1";
-    int messageRetour = 8;
     int numeroProc = 0;
 
 
@@ -89,7 +88,7 @@ int main(int argc, char **argv) {
             desc2 = open(forwardPipe[0], O_WRONLY);
             desc1 = open(forwardPipe[nombreDeProcessus - 1], O_RDONLY);
             write(desc2, messageAller, sizeof(messageAller));
-            printf("Processu[%d] : valeur envoyée %s.\n", getpid(), messageAller);
+            printf("Processus[%d] : valeur envoyée %s.\n", getpid(), messageAller);
             read(desc1, messageAller, sizeof(messageAller));
             sleep(3);
             printf("Processus[%d] : valeur lue %s.\n", getpid(), messageAller);
@@ -116,6 +115,18 @@ int main(int argc, char **argv) {
             sprintf(str, "%d", numeroProc);
             strcat(messageAller, str);
             write(desc2, messageAller, sizeof(messageAller));
+            /**
+             * Le processus Pn ecrit dans le fichier
+             * sharedInfo.txt les messages partages
+             * par les processus
+             */
+            if (numeroProc == nombreDeProcessus) {
+                char buf[100];
+                int fd;
+                fd = open("sharedInfo.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                write(fd, messageAller, strlen(messageAller) * sizeof(char));
+                close(fd);
+            }
             printf("Processus[%d] : valeur envoyée %s.\n", getpid(), messageAller);
             close(desc1);
             close(desc2);
@@ -126,7 +137,6 @@ int main(int argc, char **argv) {
             read(desc3, messageAller, sizeof(messageAller));
             printf("Processus[%d] : valeur lue %s.\n", getpid(), messageAller);
 
-            messageRetour *= 3;
             write(desc4, messageAller, sizeof(messageAller));
             printf("Processus[%d] : valeur envoyée %s.\n", getpid(), messageAller);
             close(desc3);
