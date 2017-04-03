@@ -23,7 +23,8 @@
  *****************************************************/
 int nombreDeProcessus;          //Nombre de processus a creer
 pid_t pidMainProc;           //pid du processus principal
-int cpt = 0;
+int numeroProc = 0;
+int cpt = 1;
 
 
 
@@ -42,7 +43,7 @@ int cpt = 0;
  */
 int controleArguments(int, char *);
 
-void handler_tubesDispo(int);
+void handler(int);
 
 
 #endif //PROJET_PROGSYS_PROJET_PROGSYS_H

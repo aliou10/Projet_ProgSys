@@ -26,8 +26,19 @@ int controleArguments(int argc, char *argv) {
     return nbproc;
 }
 
-void handler_tubesDispo(int signum) {
+
+void handler(int signum) {
     if (signum == SIGUSR1) {
         printf("Processus [%d] : signal SIGUSR1 recu:\n", getpid());
+        sleep(2);
+    }
+    if (signum == SIGUSR2) {
+        printf("Processus [%d] : signal SIGUSR2 recu de [%d]:\n", getpid(), getpid() + 1);
+        cpt++;
+
+    }
+    if (signum == SIGTERM) {
+        printf("Processus [%d] : je termine:\n", getpid());
+        exit(EXIT_SUCCESS);
     }
 }
