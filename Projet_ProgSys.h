@@ -16,7 +16,12 @@
 #include <string.h>
 #include <ctype.h>
 #include <signal.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/wait.h>
 
+#define CLE 1056
+#define CLE1 1058
 
 /*****************************************************
  * Declarations des variables
@@ -24,7 +29,10 @@
 int nombreDeProcessus;          //Nombre de processus a creer
 pid_t pidMainProc;           //pid du processus principal
 int numeroProc = 0;
-int cpt = 1;
+void *adressePidFils;
+void *adresseSegmentPublicKeys;
+int *publicKey;
+pid_t *pid;
 
 
 
@@ -43,7 +51,35 @@ int cpt = 1;
  */
 int controleArguments(int, char *);
 
-void handler(int);
+/**
+ * Handler pour les signaux
+ * sur disponibilité du segment
+ * de memoire partagée pour les
+ * clés publiques
+ */
+void handlerSegment(int);
+
+/**
+* Handler pour les signaux
+* sur disponibilité des tubes
+*/
+void handlerPipe(int);
+
+/**
+* Handler pour terminaison
+* des processus
+*/
+void handlerTerminaison(int);
+
+/**
+ * Log des processus
+ */
+void logproc(int, int, char *);
+
+/**
+ * Suppression des segments
+ */
+void rmKEYS();
 
 
 #endif //PROJET_PROGSYS_PROJET_PROGSYS_H

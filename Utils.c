@@ -26,19 +26,71 @@ int controleArguments(int argc, char *argv) {
     return nbproc;
 }
 
-
-void handler(int signum) {
+void handlerPipe(int signum) {
     if (signum == SIGUSR1) {
-        printf("Processus [%d] : signal SIGUSR1 recu:\n", getpid());
+        printf("Processus [%d] : signal SIGUSR1 recu tubes disponibles:\n", getpid());
+    }
+}
+
+void handlerSegment(int signum) {
+    if (signum == SIGUSR2) {
+        printf("Processus [%d] : signal SIGUSR1 recu clés disponibles:\n", getpid());
         sleep(2);
     }
-    if (signum == SIGUSR2) {
-        printf("Processus [%d] : signal SIGUSR2 recu de [%d]:\n", getpid(), getpid() + 1);
-        cpt++;
+}
 
+void handlerTerminaison(int signum) {
+    if (signum == SIGUSR2) {
+        pid = adressePidFils;
+        printf("Processus [%d] : signal SIGUSR2 recu de [%d] : mort de [%d]\n",
+               pid[numeroProc - 1], pid[numeroProc], pid[numeroProc + 1]);
     }
-    if (signum == SIGTERM) {
-        printf("Processus [%d] : je termine:\n", getpid());
-        exit(EXIT_SUCCESS);
+}
+
+void logproc(int numero, int pid, char *message) {
+    char log[13];
+    sprintf(log, "logproc_%d.txt", numero);
+    int fd = open(log, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    char num[1];
+    char pidproc[10];
+    sprintf(num, "%d", numero);
+    sprintf(pidproc, "%d", pid);
+    write(fd, "Numero: ", 9);
+    write(fd, &num, sizeof(char));
+    write(fd, "\n", 1);
+    write(fd, "Pid: ", 6);
+    write(fd, &pidproc, strlen(pidproc) * sizeof(char));
+    write(fd, "\n", 1);
+    write(fd, "Information: ", 13);
+    write(fd, message, strlen(message));
+    close(fd);
+}
+
+void rmKEYS() {
+    int shmid;
+    int shmidpid;
+
+    /**
+     * Recuperation des segments de memoire partagee
+     */
+    if ((shmid = shmget(CLE, 0, 0)) == -1) {
+        perror("Erreur lors de la recuperation du segment de memoire partagee ");
+        exit(EXIT_FAILURE);
+    }
+    if ((shmidpid = shmget(CLE1, 0, 0)) == -1) {
+        perror("Erreur lors de la recuperation du segment de memoire partagee ");
+        exit(EXIT_FAILURE);
+    }
+
+    /**
+     * Suppression des segments de memoire partagee
+     */
+    if (shmctl(shmid, IPC_RMID, 0) == -1) {
+        perror("Erreur lors de la suppression du segment de memoire partagee ");
+        exit(EXIT_FAILURE);
+    }
+    if (shmctl(shmidpid, IPC_RMID, 0) == -1) {
+        perror("Erreur lors de la suppression du segment de memoire partagee ");
+        exit(EXIT_FAILURE);
     }
 }
