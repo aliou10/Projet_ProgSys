@@ -19,19 +19,21 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/wait.h>
+#include <math.h>
 
-#define CLE 1056
-#define CLE1 1058
+#define CLE 248
+#define CLE1 249
+#define CLE2 250
 
 /*****************************************************
  * Declarations des variables
  *****************************************************/
 int nombreDeProcessus;          //Nombre de processus a creer
 pid_t pidMainProc;           //pid du processus principal
-int numeroProc = 0;
+int numeroProc;
 void *adressePidFils;
 void *adresseSegmentPublicKeys;
-int *publicKey;
+long int *publicKey;
 pid_t *pid;
 
 
@@ -70,6 +72,18 @@ void handlerPipe(int);
 * des processus
 */
 void handlerTerminaison(int);
+
+int prime(long int);
+
+void ce(long int, long int, long int, long int[], long int[]);
+
+long int cd(long int, long int);
+
+long int *encrypt(char *, long int, long int, long int[]);
+
+void decrypt(char *, long int, long int, long int *);
+
+long int generate(long int[], long int[]);
 
 /**
  * Log des processus

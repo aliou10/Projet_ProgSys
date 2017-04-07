@@ -3,7 +3,7 @@
 //
 
 #include "Projet_ProgSys.h"
-#include "Utils.c"
+
 
 /**
  * Compteur utilisé pour forcer
@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
     int desc1, desc2;
     int desc3, desc4;
 
-    int shmid, shmidpid;
+    int shmid, shmidpid, shmidtmp;
 
     /**
      * Messages qui seront
@@ -44,6 +44,12 @@ int main(int argc, char **argv) {
      */
     char messageAller[100] = "processus1";
     char messageRetour[100];
+
+    long int *temp[nombreDeProcessus],
+            tmp[100],
+            pub[nombreDeProcessus][100],
+            priv[nombreDeProcessus][100];
+    long int n[nombreDeProcessus];
 
 
     /**
@@ -101,12 +107,15 @@ int main(int argc, char **argv) {
     pid = adressePidFils;
 
 
+
+
     /**
      * Creation des processus par P0
      */
     for (int i = 0; i < nombreDeProcessus; i++) {
         if (fork() == 0) {
             numeroProc++;
+            n[numeroProc - 1] = generate(pub[numeroProc - 1], priv[numeroProc - 1]);
             /**
              * Chaque processus s'attache au segment de memoire
              * et y depose sa cle publique
@@ -119,7 +128,9 @@ int main(int argc, char **argv) {
              * Ligne de test numeroProc sera remplacé par la
              * clé publique du processus
              */
-            *publicKey = numeroProc;
+            *publicKey = pub[numeroProc - 1][0];
+            printf("Processus [%d] : ma cle pub : %ld\n", getpid(), pub[numeroProc - 1][0]);
+            printf("Processus [%d] : ma cle priv : %ld\n", getpid(), priv[numeroProc - 1][0]);
             ++publicKey;
             /**
              * Le processus depose son pid dans le
@@ -195,9 +206,15 @@ int main(int argc, char **argv) {
      */
     if (getpid() != pidMainProc) {
         if (numeroProc == 1) {
+            publicKey = adresseSegmentPublicKeys;
             printf("\n\n***** Parcours premier sens *****\n\n");
             desc2 = open(forwardPipe[0], O_WRONLY);
             desc1 = open(forwardPipe[nombreDeProcessus - 1], O_RDONLY);
+            /*temp[numeroProc - 1] = encrypt(messageAller,
+                                           publicKey[0], n[numeroProc - 1], tmp);
+            /*for (int i = 0; i < strlen(messageAller); i++) {
+                printf(" : %ld", temp[numeroProc - 1][i]);
+            }*/
             write(desc2, messageAller, sizeof(messageAller));
             printf("Processus[%d] : valeur envoyée %s.\n", getpid(), messageAller);
             logproc(numeroProc, getpid(), messageAller);
@@ -208,6 +225,14 @@ int main(int argc, char **argv) {
             desc1 = open(forwardPipe[numeroProc - 2], O_RDONLY);
             desc2 = open(forwardPipe[numeroProc - 1], O_WRONLY);
             read(desc1, messageAller, sizeof(messageAller));
+            //for (int i = 0; i < strlen(messageAller); i++)
+            //printf(" : %ld", adrtemp[numeroProc - 2][i]);
+            //test valeurs temp
+            /*for (int i = 0; i < strlen(messageAller); i++) {
+                printf(" : %ld", temp[numeroProc - 2][i]);
+            }*/
+            printf("je decrypte avec ma cle privee : %ld\n", priv[numeroProc - 1][0]);
+            //decrypt(messageAller, priv[numeroProc - 1][0], n[numeroProc - 2], adrtemp);
             printf("Processus[%d] : valeur lue %s.\n", getpid(), messageAller);
             char str[10];
             strcat(messageAller, "processus");
@@ -344,6 +369,13 @@ int main(int argc, char **argv) {
     /**
      * Suppression des segments de memoire
      */
+    /*adrtemp = adresseTemp;
+    int j = 0;
+    while (j < 10) {
+        printf("tmp : %ld", adrtemp[0][j]);
+        j++;
+    }*/
+
     rmKEYS();
 
 

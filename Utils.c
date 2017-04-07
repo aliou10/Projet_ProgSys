@@ -47,6 +47,100 @@ void handlerTerminaison(int signum) {
     }
 }
 
+
+int prime(long int pr) {
+    int i;
+    int j = (int) sqrt(pr);
+    for (i = 2; i <= j; i++) {
+        if (pr % i == 0)
+            return 0;
+    }
+    return 1;
+}
+
+long int cd(long int x, long int t) {
+    long int k = 1;
+    while (1) {
+        k = k + t;
+        if (k % x == 0)
+            return (k / x);
+    }
+}
+
+long int generate(long int pub[], long int priv[]) {
+    long int p, q;
+    srand((unsigned) time(NULL) + getpid());   // should only be called once
+    p = 8, q = 8;
+    while (prime(q) != 1) {
+        q = rand() % (100 - 5) + 5;
+    }
+    while (prime(p) != 1) {
+        p = rand() % (q - 3) + 3;
+    }
+    long int n = p * q, t;
+    t = (p - 1) * (q - 1);
+    ce(p, q, t, pub, priv);
+    return n;
+}
+
+void ce(long int p, long int q, long int t, long int e[], long int d[]) {
+    int k;
+    k = 0;
+    for (int i = 2; i < t; i++) {
+        if (t % i == 0)
+            continue;
+        long int flag = prime(i);
+        if (flag == 1 && i != p && i != q) {
+            e[k] = i;
+            flag = cd(e[k], t);
+            if (flag > 0) {
+                d[k] = flag;
+                k++;
+            }
+            if (k == 99)
+                break;
+        }
+    }
+}
+
+
+long int *encrypt(char *msg, long int e, long int n, long int temp[]) {
+    long int pt, ct, key = e, k, len;
+    int i = 0, j;
+    len = strlen(msg);
+    while (i != len) {
+        pt = msg[i];
+        pt = pt - 96;
+        k = 1;
+        for (j = 0; j < key; j++) {
+            k = k * pt;
+            k = k % n;
+        }
+        temp[i] = k;
+        ct = k + 96;
+        msg[i] = ct;
+        i++;
+    }
+    return temp;
+}
+
+void decrypt(char *msg, long int d, long int n, long int *temp) {
+    long int pt, ct, key = d, k;
+    int i = 0, j;
+    while (i < strlen(msg)) {
+        ct = temp[i];
+        k = 1;
+        for (j = 0; j < key; j++) {
+            k = k * ct;
+            k = k % n;
+        }
+        pt = k + 96;
+        msg[i] = pt;
+        i++;
+    }
+}
+
+
 void logproc(int numero, int pid, char *message) {
     char log[13];
     sprintf(log, "logproc_%d.txt", numero);
@@ -69,6 +163,7 @@ void logproc(int numero, int pid, char *message) {
 void rmKEYS() {
     int shmid;
     int shmidpid;
+    int shmidadr;
 
     /**
      * Recuperation des segments de memoire partagee
@@ -81,6 +176,10 @@ void rmKEYS() {
         perror("Erreur lors de la recuperation du segment de memoire partagee ");
         exit(EXIT_FAILURE);
     }
+    if ((shmidadr = shmget(CLE2, 0, 0)) == -1) {
+        perror("Erreur lors de la recuperation du segment de memoire partagee ");
+        exit(EXIT_FAILURE);
+    }
 
     /**
      * Suppression des segments de memoire partagee
@@ -90,6 +189,10 @@ void rmKEYS() {
         exit(EXIT_FAILURE);
     }
     if (shmctl(shmidpid, IPC_RMID, 0) == -1) {
+        perror("Erreur lors de la suppression du segment de memoire partagee ");
+        exit(EXIT_FAILURE);
+    }
+    if (shmctl(shmidadr, IPC_RMID, 0) == -1) {
         perror("Erreur lors de la suppression du segment de memoire partagee ");
         exit(EXIT_FAILURE);
     }
