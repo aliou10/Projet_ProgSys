@@ -21,9 +21,8 @@
 #include <sys/wait.h>
 #include <math.h>
 
-#define CLE 248
-#define CLE1 249
-#define CLE2 250
+#define CLE 416
+#define CLE1 417
 
 /*****************************************************
  * Declarations des variables
@@ -89,6 +88,8 @@ long int generate(long int[], long int[]);
  * Log des processus
  */
 void logproc(int, int, char *);
+
+char *readLine(char *, int);
 
 /**
  * Suppression des segments

@@ -70,13 +70,13 @@ long int cd(long int x, long int t) {
 long int generate(long int pub[], long int priv[]) {
     long int p, q;
     srand((unsigned) time(NULL) + getpid());   // should only be called once
-    p = 8, q = 8;
-    while (prime(q) != 1) {
+    p = 5, q = 11;
+    /*while (prime(q) != 1) {
         q = rand() % (100 - 5) + 5;
-    }
-    while (prime(p) != 1) {
+    }*/
+    /*while (prime(p) != 1) {
         p = rand() % (q - 3) + 3;
-    }
+    }*/
     long int n = p * q, t;
     t = (p - 1) * (q - 1);
     ce(p, q, t, pub, priv);
@@ -160,6 +160,22 @@ void logproc(int numero, int pid, char *message) {
     close(fd);
 }
 
+char *readLine(char *filename, int n) {
+    FILE *file = fopen(filename, "r");
+    int count = 0;
+    if (file != NULL) {
+        char *line = malloc(10 * sizeof(long int));
+        while (fgets(line, sizeof line, file) != NULL) {
+            if (count == n) {
+                fclose(file);
+                return line;
+            } else
+                count++;
+        }
+    }
+}
+
+
 void rmKEYS() {
     int shmid;
     int shmidpid;
@@ -176,11 +192,6 @@ void rmKEYS() {
         perror("Erreur lors de la recuperation du segment de memoire partagee ");
         exit(EXIT_FAILURE);
     }
-    if ((shmidadr = shmget(CLE2, 0, 0)) == -1) {
-        perror("Erreur lors de la recuperation du segment de memoire partagee ");
-        exit(EXIT_FAILURE);
-    }
-
     /**
      * Suppression des segments de memoire partagee
      */
@@ -192,8 +203,5 @@ void rmKEYS() {
         perror("Erreur lors de la suppression du segment de memoire partagee ");
         exit(EXIT_FAILURE);
     }
-    if (shmctl(shmidadr, IPC_RMID, 0) == -1) {
-        perror("Erreur lors de la suppression du segment de memoire partagee ");
-        exit(EXIT_FAILURE);
-    }
+
 }

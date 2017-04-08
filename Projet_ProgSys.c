@@ -3,6 +3,7 @@
 //
 
 #include "Projet_ProgSys.h"
+#include "Utils.c"
 
 
 /**
@@ -11,6 +12,7 @@
  * parcours en sens inverse
  */
 int cpt = 1;
+int g = 1;
 
 int main(int argc, char **argv) {
     /**
@@ -36,7 +38,7 @@ int main(int argc, char **argv) {
     int desc1, desc2;
     int desc3, desc4;
 
-    int shmid, shmidpid, shmidtmp;
+    int shmid, shmidpid;
 
     /**
      * Messages qui seront
@@ -106,9 +108,6 @@ int main(int argc, char **argv) {
     }
     pid = adressePidFils;
 
-
-
-
     /**
      * Creation des processus par P0
      */
@@ -124,17 +123,11 @@ int main(int argc, char **argv) {
                 perror("Erreur lors de l'attachement du segment de memoire partagee ");
                 exit(EXIT_FAILURE);
             }
-            /**
-             * Ligne de test numeroProc sera remplacé par la
-             * clé publique du processus
-             */
             *publicKey = pub[numeroProc - 1][0];
-            printf("Processus [%d] : ma cle pub : %ld\n", getpid(), pub[numeroProc - 1][0]);
-            printf("Processus [%d] : ma cle priv : %ld\n", getpid(), priv[numeroProc - 1][0]);
             ++publicKey;
             /**
              * Le processus depose son pid dans le
-             * segement des pid
+             * segment des pid
              */
             *pid = getpid();
             ++pid;
@@ -207,37 +200,54 @@ int main(int argc, char **argv) {
     if (getpid() != pidMainProc) {
         if (numeroProc == 1) {
             publicKey = adresseSegmentPublicKeys;
+            pid = adressePidFils;
             printf("\n\n***** Parcours premier sens *****\n\n");
             desc2 = open(forwardPipe[0], O_WRONLY);
             desc1 = open(forwardPipe[nombreDeProcessus - 1], O_RDONLY);
-            /*temp[numeroProc - 1] = encrypt(messageAller,
-                                           publicKey[0], n[numeroProc - 1], tmp);
-            /*for (int i = 0; i < strlen(messageAller); i++) {
-                printf(" : %ld", temp[numeroProc - 1][i]);
-            }*/
+            temp[numeroProc - 1] = encrypt(messageAller,
+                                           publicKey[numeroProc], n[numeroProc - 1], tmp);
+            int fd = open("mytemp", O_WRONLY | O_CREAT | O_APPEND | O_TRUNC, 0644);
+            for (int i = 0; i < strlen(messageAller); i++) {
+                char bf[10];
+                sprintf(bf, "%ld", temp[numeroProc - 1][i]);
+                write(fd, bf, strlen(bf));
+                write(fd, "\n", 1);
+            }
             write(desc2, messageAller, sizeof(messageAller));
-            printf("Processus[%d] : valeur envoyée %s.\n", getpid(), messageAller);
+            printf("Processus[%d] : message crypté envoyé %s.\n", getpid(), messageAller);
             logproc(numeroProc, getpid(), messageAller);
             read(desc1, messageAller, sizeof(messageAller));
             close(desc2);
             close(desc1);
-        } else {
+        }
+        if (numeroProc != 1) {
+            pid = adressePidFils;
+            publicKey = adresseSegmentPublicKeys;
             desc1 = open(forwardPipe[numeroProc - 2], O_RDONLY);
             desc2 = open(forwardPipe[numeroProc - 1], O_WRONLY);
             read(desc1, messageAller, sizeof(messageAller));
-            //for (int i = 0; i < strlen(messageAller); i++)
-            //printf(" : %ld", adrtemp[numeroProc - 2][i]);
-            //test valeurs temp
-            /*for (int i = 0; i < strlen(messageAller); i++) {
-                printf(" : %ld", temp[numeroProc - 2][i]);
-            }*/
-            printf("je decrypte avec ma cle privee : %ld\n", priv[numeroProc - 1][0]);
-            //decrypt(messageAller, priv[numeroProc - 1][0], n[numeroProc - 2], adrtemp);
-            printf("Processus[%d] : valeur lue %s.\n", getpid(), messageAller);
+            long int tep[10];
+            for (int i = 0; i < strlen(messageAller); i++)
+                tep[i] = atoi(readLine("mytemp", i));
+            decrypt(messageAller, priv[numeroProc - 1][0], n[numeroProc - 2], tep);
+            printf("Processus[%d] : valeur decryptee lue %s.\n", getpid(), messageAller);
             char str[10];
             strcat(messageAller, "processus");
             sprintf(str, "%d", numeroProc);
             strcat(messageAller, str);
+            if (numeroProc == nombreDeProcessus)
+                temp[numeroProc - 1] = encrypt(messageAller,
+                                               publicKey[0], n[numeroProc - 1], tmp);
+            if (numeroProc != nombreDeProcessus)
+                temp[numeroProc - 1] = encrypt(messageAller,
+                                               publicKey[numeroProc], n[numeroProc - 1], tmp);
+            int fd1 = open("mytemp", O_WRONLY | O_CREAT | O_APPEND | O_TRUNC, 0644);
+            for (int i = 0; i < strlen(messageAller); i++) {
+                char bf[10];
+                sprintf(bf, "%ld", temp[numeroProc - 1][i]);
+                write(fd1, bf, strlen(bf));
+                write(fd1, "\n", 1);
+            }
             char test[10];
             strcpy(test, "processus");
             strcat(test, str);
@@ -258,6 +268,10 @@ int main(int argc, char **argv) {
             if (numeroProc == nombreDeProcessus) {
                 int fd;
                 fd = open("sharedInfo.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                long int tep1[10];
+                for (int i = 0; i < strlen(messageAller); i++)
+                    tep1[i] = atoi(readLine("mytemp", i));
+                decrypt(messageAller, priv[numeroProc - 1][0], n[numeroProc - 2], tep1);
                 write(fd, messageAller, strlen(messageAller) * sizeof(char));
                 printf("Processus[%d] : ecriture sur fichier des infos : %s\n\n\n",
                        getpid(), messageAller);
@@ -280,6 +294,10 @@ int main(int argc, char **argv) {
             desc3 = open(backwardPipe[nombreDeProcessus - 1], O_RDONLY);
             write(desc4, messageRetour, sizeof(messageRetour));
             read(desc3, messageRetour, sizeof(messageRetour));
+            long int tep[10];
+            for (int i = 0; i < strlen(messageRetour); i++)
+                tep[i] = atoi(readLine("mytemp", i));
+            decrypt(messageRetour, priv[numeroProc - 1][0], n[numeroProc - 1], tep);
             printf("Processus[%d] : valeur lue %s.\n\n\n", getpid(), messageRetour);
             close(desc4);
             close(desc3);
@@ -288,8 +306,12 @@ int main(int argc, char **argv) {
             desc3 = open(backwardPipe[nombreDeProcessus - numeroProc], O_RDONLY);
             desc4 = open(backwardPipe[nombreDeProcessus - numeroProc + 1], O_WRONLY);
             read(desc3, messageRetour, sizeof(messageRetour));
+            long int tep[10];
+            for (int i = 0; i < strlen(messageRetour); i++)
+                tep[i] = atoi(readLine("mytemp", i));
+            decrypt(messageRetour, priv[numeroProc - 1][0], n[numeroProc - 1], tep);
             if (numeroProc != nombreDeProcessus)
-                printf("Processus[%d] : valeur lue %s.\n", getpid(), messageRetour);
+                printf("Processus[%d] : valeur decryptee lue %s.\n", getpid(), messageRetour);
 
             /**
              * Chaque processus Pi enleve son
@@ -300,8 +322,17 @@ int main(int argc, char **argv) {
             for (int i = 0; i < strlen(messageRetour) - 10; i++)
                 buf[i] = messageRetour[i];
             strcpy(messageRetour, buf);
+            temp[numeroProc - 1] = encrypt(messageRetour,
+                                           publicKey[numeroProc - 2], n[numeroProc - 1], tmp);
+            int fd1 = open("mytemp", O_WRONLY | O_CREAT | O_APPEND | O_TRUNC, 0644);
+            for (int i = 0; i < strlen(messageAller); i++) {
+                char bf[10];
+                sprintf(bf, "%ld", temp[numeroProc - 1][i]);
+                write(fd1, bf, strlen(bf));
+                write(fd1, "\n", 1);
+            }
             write(desc4, messageRetour, sizeof(messageRetour));
-            printf("Processus[%d] : valeur envoyée %s.\n", getpid(), messageRetour);
+            printf("Processus[%d] : valeur cryptée envoyée %s.\n", getpid(), messageRetour);
             close(desc3);
             close(desc4);
         }
